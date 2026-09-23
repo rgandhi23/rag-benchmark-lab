@@ -1,0 +1,21 @@
+[
+  {
+    "document_id": "atlas",
+    "title": "Project Atlas Search Retrospective",
+    "source": "synthetic://atlas-retrospective",
+    "text": "Project Atlas is an enterprise knowledge search service. The team reduced median retrieval latency from 240 milliseconds to 95 milliseconds by batching embedding requests, caching frequent queries, and replacing exhaustive comparison with approximate nearest-neighbor search. Offline evaluation uses Recall at K and mean reciprocal rank. Production dashboards track p50 and p95 latency, error rate, and empty-result rate."
+  },
+  {
+    "document_id": "beacon",
+    "title": "Project Beacon Model Monitoring Guide",
+    "source": "synthetic://beacon-monitoring",
+    "text": "Project Beacon monitors classification systems after deployment. It records feature drift, prediction drift, calibration error, latency, and data-quality failures. Alerts require both a threshold breach and a minimum sample size to reduce noisy pages. The weekly evaluation job compares production samples with a labeled reference set and publishes precision, recall, F1 score, and subgroup performance."
+  },
+  {
+    "document_id": "harbor",
+    "title": "Project Harbor AI Security Controls",
+    "source": "synthetic://harbor-security",
+    "text": "Project Harbor provides secure access to internal AI tools. It applies role-based access control, short-lived service credentials, encrypted transport, audit logging, and document-level authorization before retrieval. Prompt inputs are screened for secrets and retrieved passages inherit source permissions. Security tests verify that users cannot retrieve documents outside their assigned groups."
+  }
+]
+

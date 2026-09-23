@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAG Benchmark Lab</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #07111f;
+      --surface: #0d1b2e;
+      --surface-2: #13243a;
+      --text: #f1f5f9;
+      --muted: #9fb0c5;
+      --line: #243a55;
+      --cyan: #36d6d0;
+      --blue: #659cff;
+      --green: #61d695;
+      --danger: #ff8b8b;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 Inter, ui-sans-serif, system-ui, sans-serif; }
+    main { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 48px 0 64px; }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: end; margin-bottom: 34px; }
+    h1, h2 { margin: 0; letter-spacing: -0.025em; }
+    h1 { font-size: clamp(2rem, 5vw, 4.5rem); line-height: 0.95; max-width: 760px; }
+    h2 { font-size: 1.1rem; }
+    .eyebrow { color: var(--cyan); font-weight: 700; text-transform: uppercase; letter-spacing: .14em; font-size: .74rem; }
+    .subtitle { color: var(--muted); max-width: 650px; margin: 14px 0 0; }
+    .status { display: flex; align-items: center; gap: 8px; color: var(--muted); white-space: nowrap; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 18px var(--green); }
+    .grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); gap: 18px; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
+    .panel-head { display: flex; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 18px; }
+    label { display: block; color: var(--muted); font-size: .84rem; margin: 14px 0 7px; }
+    textarea, input { width: 100%; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); color: var(--text); padding: 12px 14px; font: inherit; }
+    textarea { resize: vertical; min-height: 110px; }
+    button { border: 0; border-radius: 10px; background: var(--cyan); color: #041019; padding: 11px 16px; font: inherit; font-weight: 750; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .answer { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); min-height: 90px; }
+    .answer p { margin: 0; white-space: pre-wrap; }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px 18px; color: var(--muted); font-size: .82rem; margin-top: 14px; }
+    .citation { margin-top: 12px; padding: 12px 0 0; border-top: 1px solid var(--line); }
+    .citation strong { color: var(--blue); }
+    .citation p { color: var(--muted); margin: 5px 0 0; font-size: .9rem; }
+    .metrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .metric { background: var(--surface-2); border-radius: 12px; padding: 14px; }
+    .metric span { color: var(--muted); font-size: .76rem; display: block; }
+    .metric strong { font-size: 1.55rem; }
+    .runs { margin-top: 18px; }
+    .run { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); }
+    .run small { color: var(--muted); display: block; }
+    .score { color: var(--green); font-weight: 750; }
+    .error { color: var(--danger); }
+    code { color: var(--cyan); }
+    @media (max-width: 820px) {
+      header { align-items: start; flex-direction: column; }
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <div class="eyebrow">RAG systems engineering</div>
+        <h1>Retrieval quality you can inspect</h1>
+        <p class="subtitle">Ask a question, inspect the ranked evidence, and compare persisted benchmark runs across retrieval configurations.</p>
+      </div>
+      <div class="status"><span class="dot"></span><span id="status">Connecting</span></div>
+    </header>
+
+    <div class="grid">
+      <section class="panel">
+        <div class="panel-head"><h2>Query workspace</h2><code>POST /v1/query</code></div>
+        <form id="query-form">
+          <label for="question">Question</label>
+          <textarea id="question">What improved Atlas search latency?</textarea>
+          <button id="ask" type="submit">Run retrieval</button>
+        </form>
+        <div class="answer" id="answer"><p>Run a query to see the generated answer and its evidence.</p></div>
+        <div id="citations"></div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-head"><h2>Evaluation snapshot</h2><button id="evaluate" type="button">Run benchmark</button></div>
+        <div class="metrics">
+          <div class="metric"><span>Hit rate at 3</span><strong id="hit-rate">--</strong></div>
+          <div class="metric"><span>Precision at 3</span><strong id="precision">--</strong></div>
+          <div class="metric"><span>Recall at 3</span><strong id="recall">--</strong></div>
+          <div class="metric"><span>Mean reciprocal rank</span><strong id="mrr">--</strong></div>
+        </div>
+        <div class="runs">
+          <h2>Persisted runs</h2>
+          <div id="runs"><p class="subtitle">No runs loaded yet.</p></div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script>
+    const examples = [
+      {question: 'What improved Atlas search latency?', relevant_document_ids: ['atlas']},
+      {question: 'How does Beacon monitor models?', relevant_document_ids: ['beacon']},
+      {question: 'What security controls does Harbor use?', relevant_document_ids: ['harbor']}
+    ];
+
+    const byId = id => document.getElementById(id);
+    const escapeHtml = value => value.replace(/[&<>'"]/g, character => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    })[character]);
+
+    async function request(path, options) {
+      const response = await fetch(path, options);
+      if (!response.ok) throw new Error((await response.json()).detail || response.statusText);
+      return response.json();
+    }
+
+    async function loadHealth() {
+      try {
+        const health = await request('/health');
+        byId('status').textContent = `${health.provider} · ${health.indexed_chunks} chunks indexed`;
+      } catch (error) {
+        byId('status').textContent = 'API unavailable';
+      }
+    }
+
+    async function loadRuns() {
+      const runs = await request('/v1/runs?limit=5');
+      byId('runs').innerHTML = runs.length ? runs.map(run => `
+        <div class="run">
+          <div><strong>${escapeHtml(run.name)}</strong><small>${run.provider} · ${run.store_backend} · ${run.created_at}</small></div>
+          <div class="score">MRR ${run.mean_reciprocal_rank.toFixed(2)}</div>
+        </div>`).join('') : '<p class="subtitle">Run the benchmark to create the first record.</p>';
+    }
+
+    byId('query-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = byId('ask');
+      button.disabled = true;
+      byId('answer').innerHTML = '<p>Retrieving and generating...</p>';
+      byId('citations').innerHTML = '';
+      try {
+        const result = await request('/v1/query', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({question: byId('question').value, top_k: 3})
+        });
+        byId('answer').innerHTML = `<p>${escapeHtml(result.answer)}</p><div class="meta"><span>${result.provider}</span><span>${result.latency_ms} ms</span></div>`;
+        byId('citations').innerHTML = result.citations.map(citation => `
+          <div class="citation"><strong>[${citation.citation_id}] ${escapeHtml(citation.title)}</strong>
+          <span class="meta">score ${citation.score.toFixed(4)}</span><p>${escapeHtml(citation.excerpt)}</p></div>`).join('');
+      } catch (error) {
+        byId('answer').innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
+      } finally {
+        button.disabled = false;
+      }
+    });
+
+    byId('evaluate').addEventListener('click', async () => {
+      const button = byId('evaluate');
+      button.disabled = true;
+      button.textContent = 'Running';
+      try {
+        const result = await request('/v1/evaluate', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({name: 'dashboard-baseline', k: 3, examples})
+        });
+        byId('hit-rate').textContent = result.hit_rate_at_k.toFixed(2);
+        byId('precision').textContent = result.precision_at_k.toFixed(2);
+        byId('recall').textContent = result.recall_at_k.toFixed(2);
+        byId('mrr').textContent = result.mean_reciprocal_rank.toFixed(2);
+        await loadRuns();
+      } catch (error) {
+        button.textContent = 'Failed';
+      } finally {
+        button.disabled = false;
+        setTimeout(() => { button.textContent = 'Run benchmark'; }, 900);
+      }
+    });
+
+    Promise.all([loadHealth(), loadRuns()]);
+  </script>
+</body>
+</html>
