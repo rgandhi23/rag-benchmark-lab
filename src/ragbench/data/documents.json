@@ -18,4 +18,3 @@
     "text": "Project Harbor provides secure access to internal AI tools. It applies role-based access control, short-lived service credentials, encrypted transport, audit logging, and document-level authorization before retrieval. Prompt inputs are screened for secrets and retrieved passages inherit source permissions. Security tests verify that users cannot retrieve documents outside their assigned groups."
   }
 ]
-

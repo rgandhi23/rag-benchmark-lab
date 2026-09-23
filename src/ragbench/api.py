@@ -1,5 +1,6 @@
 import json
 from contextlib import asynccontextmanager
+from importlib.resources import files
 from pathlib import Path
 from typing import Annotated
 
@@ -15,6 +16,7 @@ from ragbench.generation import DemoGenerator, OpenAIGenerator
 from ragbench.models import (
     BenchmarkRun,
     DocumentInput,
+    EvaluationExample,
     EvaluationRequest,
     EvaluationResponse,
     IngestResponse,
@@ -50,10 +52,13 @@ def build_service(settings: Settings) -> RAGService:
 
 
 def load_sample_documents() -> list[DocumentInput]:
-    sample_path = Path(__file__).resolve().parents[2] / "data" / "sample" / "documents.json"
-    if not sample_path.exists():
-        return []
+    sample_path = files("ragbench").joinpath("data/documents.json")
     return [DocumentInput.model_validate(item) for item in json.loads(sample_path.read_text())]
+
+
+def load_sample_evaluation_set() -> list[EvaluationExample]:
+    sample_path = files("ragbench").joinpath("data/evaluation.json")
+    return [EvaluationExample.model_validate(item) for item in json.loads(sample_path.read_text())]
 
 
 @asynccontextmanager
@@ -138,6 +143,11 @@ def evaluate(
         store_backend=settings.store_backend,
     )
     return result
+
+
+@app.get("/v1/evaluation-set", response_model=list[EvaluationExample])
+def sample_evaluation_set() -> list[EvaluationExample]:
+    return load_sample_evaluation_set()
 
 
 @app.get("/v1/runs", response_model=list[BenchmarkRun])

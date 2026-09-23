@@ -13,4 +13,4 @@ run:
 	uvicorn ragbench.api:app --reload
 
 evaluate:
-	ragbench --evaluate
+	ragbench evaluate

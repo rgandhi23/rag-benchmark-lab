@@ -7,14 +7,18 @@ def test_health_and_query() -> None:
     with TestClient(app) as client:
         dashboard = client.get("/")
         health = client.get("/health")
+        evaluation_set = client.get("/v1/evaluation-set")
         response = client.post(
             "/v1/query", json={"question": "What security controls does Harbor use?", "top_k": 2}
         )
 
     assert dashboard.status_code == 200
     assert "Retrieval quality you can inspect" in dashboard.text
+    assert "How one question travels through the pipeline" in dashboard.text
     assert health.status_code == 200
     assert health.json()["indexed_chunks"] == 3
+    assert evaluation_set.status_code == 200
+    assert len(evaluation_set.json()) == 9
     assert response.status_code == 200
     assert response.json()["citations"][0]["document_id"] == "harbor"
 

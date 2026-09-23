@@ -9,6 +9,9 @@ generates cited answers, and records benchmark runs with multiple retrieval metr
 This repository remains small enough to understand end to end. It runs offline in `demo` mode
 and can switch to OpenAI embeddings and generation with configuration only.
 
+New to RAG? Start with the [learning guide](LEARNING_GUIDE.md). When you are ready to show the
+project, use the [five-minute demo script](DEMO_SCRIPT.md).
+
 ## Why this project exists
 
 RAG demos often stop after producing a plausible answer. This lab makes the hidden parts
@@ -67,6 +70,20 @@ Run the baseline evaluation:
 make evaluate
 ```
 
+Inspect the active configuration without revealing a credential:
+
+```bash
+ragbench doctor
+```
+
+The command-line interface uses explicit subcommands:
+
+```bash
+ragbench query "What improved Atlas search latency?" --top-k 3
+ragbench evaluate --name experiment-one --k 3
+ragbench serve --reload
+```
+
 ## OpenAI mode
 
 Keep secrets in `.env.local`, which is ignored by Git:
@@ -112,6 +129,22 @@ Each run records Hit Rate@K, Precision@K, Recall@K, mean reciprocal rank, averag
 latency, the provider, and the storage backend. The case-level response shows retrieved document
 IDs and scores so metric changes can be traced to concrete ranking behavior.
 
+## Verified baseline
+
+The packaged evaluation set contains nine labeled questions. The latest Qdrant demo run at
+`K=3` produced:
+
+| Metric | Result |
+| --- | ---: |
+| Hit Rate@3 | 1.0000 |
+| Precision@3 | 0.3333 |
+| Recall@3 | 1.0000 |
+| Mean reciprocal rank | 0.9444 |
+| Average retrieval latency | 0.80 ms |
+
+One Atlas dashboard question places the correct document second, behind Beacon. This is an
+intentional, visible baseline limitation and the first target for the planned hybrid retriever.
+
 ## Persistent vector storage
 
 Qdrant local mode is enabled by default and writes to `.ragbench/qdrant`. Restarting the API does
@@ -139,9 +172,9 @@ src/ragbench/
   evaluation.py   Hit rate, precision, recall, MRR, and latency
   experiments.py  SQLite benchmark-run repository
   service.py      End-to-end RAG orchestration
-  static/          Interactive benchmark dashboard
+  static/         Interactive benchmark dashboard
+  data/           Packaged sample corpus and nine-case evaluation set
 tests/            Unit and API tests
-data/sample/      Synthetic, safe-to-publish corpus
 ```
 
 ## Roadmap

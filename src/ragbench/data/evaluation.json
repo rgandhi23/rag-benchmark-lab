@@ -1,0 +1,38 @@
+[
+  {
+    "question": "Which techniques reduced Project Atlas retrieval latency?",
+    "relevant_document_ids": ["atlas"]
+  },
+  {
+    "question": "Which offline evaluation metrics are used for Atlas search?",
+    "relevant_document_ids": ["atlas"]
+  },
+  {
+    "question": "What does the Atlas production dashboard track?",
+    "relevant_document_ids": ["atlas"]
+  },
+  {
+    "question": "Which types of drift does Project Beacon record?",
+    "relevant_document_ids": ["beacon"]
+  },
+  {
+    "question": "How does Beacon reduce noisy monitoring alerts?",
+    "relevant_document_ids": ["beacon"]
+  },
+  {
+    "question": "What does the weekly Beacon evaluation publish?",
+    "relevant_document_ids": ["beacon"]
+  },
+  {
+    "question": "How does Harbor authorize document access before retrieval?",
+    "relevant_document_ids": ["harbor"]
+  },
+  {
+    "question": "How are Harbor service credentials protected?",
+    "relevant_document_ids": ["harbor"]
+  },
+  {
+    "question": "What do Harbor security tests prevent users from retrieving?",
+    "relevant_document_ids": ["harbor"]
+  }
+]
