@@ -10,7 +10,8 @@ This repository remains small enough to understand end to end. It runs offline i
 and can switch to OpenAI embeddings and generation with configuration only.
 
 New to RAG? Start with the [learning guide](LEARNING_GUIDE.md). When you are ready to show the
-project, use the [five-minute demo script](DEMO_SCRIPT.md).
+project, use the [five-minute demo script](DEMO_SCRIPT.md) and the
+[portfolio showcase kit](SHOWCASE.md).
 
 ## Why this project exists
 
