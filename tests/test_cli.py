@@ -12,6 +12,7 @@ def test_doctor_explains_active_components(capsys) -> None:
     report = json.loads(capsys.readouterr().out)
     assert report["provider"] == "demo"
     assert report["store_backend"] == "memory"
+    assert report["retrieval_mode"] == "vector"
     assert report["persistent_vectors"] is False
     assert report["api_key_configured"] is False
 

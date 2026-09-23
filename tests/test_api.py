@@ -17,6 +17,7 @@ def test_health_and_query() -> None:
     assert "How one question travels through the pipeline" in dashboard.text
     assert health.status_code == 200
     assert health.json()["indexed_chunks"] == 3
+    assert health.json()["retrieval_mode"] == "vector"
     assert evaluation_set.status_code == 200
     assert len(evaluation_set.json()) == 9
     assert response.status_code == 200

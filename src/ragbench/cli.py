@@ -47,6 +47,7 @@ def doctor_report(settings: Settings) -> dict[str, object]:
         "embedding_model": settings.embedding_model,
         "api_key_configured": bool(settings.openai_api_key),
         "store_backend": settings.store_backend,
+        "retrieval_mode": settings.retrieval_mode,
         "persistent_vectors": settings.store_backend == "qdrant",
         "qdrant_path": settings.qdrant_path,
         "experiment_db_path": settings.experiment_db_path,
@@ -91,7 +92,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             result.run_id = repository.save(
                 result,
                 provider=service.generator.provider_name,
-                store_backend=settings.store_backend,
+                store_backend=service.store.backend_name,
             )
         finally:
             repository.close()

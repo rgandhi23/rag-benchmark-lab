@@ -1,6 +1,6 @@
 from ragbench.embeddings import HashingEmbedder
 from ragbench.models import Chunk
-from ragbench.store import QdrantVectorStore
+from ragbench.store import HybridVectorStore, QdrantVectorStore
 
 
 def test_qdrant_store_persists_between_instances(tmp_path) -> None:
@@ -18,7 +18,11 @@ def test_qdrant_store_persists_between_instances(tmp_path) -> None:
 
     second = QdrantVectorStore(HashingEmbedder(), str(path), "test_chunks")
     results = second.search("retrieval latency", k=1)
+    hybrid = HybridVectorStore(second)
+    hybrid_results = hybrid.search("batching caching latency", k=1)
 
-    assert second.size == 1
+    assert hybrid.size == 1
     assert results[0].chunk.document_id == "atlas"
-    second.close()
+    assert hybrid.all_chunks() == [chunk]
+    assert hybrid_results[0].chunk.document_id == "atlas"
+    hybrid.close()

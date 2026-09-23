@@ -48,6 +48,8 @@
     .metric span { color: var(--muted); font-size: .76rem; display: block; }
     .metric strong { font-size: 1.55rem; }
     .runs { margin-top: 18px; }
+    .comparison { margin-top: 14px; border-left: 3px solid var(--cyan); padding: 10px 12px; background: var(--surface-2); color: var(--muted); font-size: .86rem; }
+    .comparison strong { color: var(--text); }
     .run { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px 0; border-top: 1px solid var(--line); }
     .run small { color: var(--muted); display: block; }
     .score { color: var(--green); font-weight: 750; }
@@ -103,6 +105,7 @@
           <div class="metric"><span>Recall at 3</span><strong id="recall">--</strong></div>
           <div class="metric"><span>Mean reciprocal rank</span><strong id="mrr">--</strong></div>
         </div>
+        <div class="comparison" id="comparison">Run the vector and hybrid configurations to compare their tradeoff.</div>
         <div class="runs">
           <h2>Persisted runs</h2>
           <div id="runs"><p class="subtitle">No runs loaded yet.</p></div>
@@ -149,7 +152,7 @@
     async function loadHealth() {
       try {
         const health = await request('/health');
-        byId('status').textContent = `${health.provider} · ${health.indexed_chunks} chunks indexed`;
+        byId('status').textContent = `${health.provider} · ${health.retrieval_mode} · ${health.indexed_chunks} chunks indexed`;
       } catch (error) {
         byId('status').textContent = 'API unavailable';
       }
@@ -163,6 +166,12 @@
         byId('precision').textContent = latest.precision_at_k.toFixed(2);
         byId('recall').textContent = latest.recall_at_k.toFixed(2);
         byId('mrr').textContent = latest.mean_reciprocal_rank.toFixed(2);
+        const baseline = runs.find(run => !run.store_backend.includes('bm25'));
+        if (latest.store_backend.includes('bm25') && baseline) {
+          const mrrDelta = latest.mean_reciprocal_rank - baseline.mean_reciprocal_rank;
+          const latencyDelta = latest.average_latency_ms - baseline.average_latency_ms;
+          byId('comparison').innerHTML = `<strong>Hybrid result:</strong> MRR ${mrrDelta >= 0 ? '+' : ''}${mrrDelta.toFixed(4)} with ${latencyDelta >= 0 ? '+' : ''}${latencyDelta.toFixed(2)} ms average retrieval latency.`;
+        }
       }
       byId('runs').innerHTML = runs.length ? runs.map(run => `
         <div class="run">

@@ -24,7 +24,7 @@ from ragbench.models import (
     QueryResponse,
 )
 from ragbench.service import RAGService
-from ragbench.store import InMemoryVectorStore, QdrantVectorStore
+from ragbench.store import HybridVectorStore, InMemoryVectorStore, QdrantVectorStore
 
 
 def build_service(settings: Settings) -> RAGService:
@@ -36,13 +36,14 @@ def build_service(settings: Settings) -> RAGService:
         embedder = HashingEmbedder()
         generator = DemoGenerator()
     if settings.store_backend == "qdrant":
-        store = QdrantVectorStore(
+        vector_store = QdrantVectorStore(
             embedder,
             path=settings.qdrant_path,
             collection_name=settings.qdrant_collection,
         )
     else:
-        store = InMemoryVectorStore(embedder)
+        vector_store = InMemoryVectorStore(embedder)
+    store = HybridVectorStore(vector_store) if settings.retrieval_mode == "hybrid" else vector_store
     return RAGService(
         chunker=WordChunker(settings.chunk_size, settings.chunk_overlap),
         store=store,
@@ -112,6 +113,7 @@ def health(service: ServiceDependency) -> dict[str, str | int]:
         "status": "ok",
         "provider": service.generator.provider_name,
         "indexed_chunks": service.store.size,
+        "retrieval_mode": app.state.settings.retrieval_mode,
     }
 
 
@@ -136,11 +138,10 @@ def evaluate(
     repository: RunRepositoryDependency,
 ) -> EvaluationResponse:
     result = evaluate_recall(service.store, request.examples, request.k, request.name)
-    settings: Settings = app.state.settings
     result.run_id = repository.save(
         result,
         provider=service.generator.provider_name,
-        store_backend=settings.store_backend,
+        store_backend=service.store.backend_name,
     )
     return result
 

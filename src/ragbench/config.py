@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     chat_model: str = "gpt-5-mini"
     embedding_model: str = "text-embedding-3-small"
     store_backend: Literal["memory", "qdrant"] = "qdrant"
+    retrieval_mode: Literal["vector", "hybrid"] = "vector"
     qdrant_path: str = ".ragbench/qdrant"
     qdrant_collection: str = "ragbench_chunks"
     experiment_db_path: str = ".ragbench/experiments.sqlite3"

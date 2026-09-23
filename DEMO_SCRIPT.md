@@ -69,13 +69,13 @@ Say:
 > I kept an offline deterministic mode so the repository is reproducible without API costs, but
 > the same application can switch to OpenAI embeddings and generation through configuration.
 
-## 4:40 - What comes next
+## 4:40 - The measured improvement
 
 Close with:
 
-> The next experiment is hybrid retrieval. I would add BM25 and reciprocal rank fusion, run the
-> same evaluation set, and use the saved baseline to decide whether the added complexity is worth
-> it.
+> I added BM25 and reciprocal rank fusion, then reran the same nine questions. MRR improved from
+> 0.9444 to 1.0000 because the missed Atlas case moved from rank two to rank one. Average retrieval
+> latency increased by 0.49 milliseconds. The next experiment is a cross-encoder reranker.
 
 ## Questions you should be ready to answer
 
@@ -103,4 +103,3 @@ that document gives full recall, while the other two results reduce precision.
 
 A larger labeled dataset, remote concurrent storage, authentication, request tracing, cost and
 tail-latency metrics, hybrid search, reranking, and answer-quality evaluation.
-

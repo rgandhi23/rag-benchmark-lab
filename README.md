@@ -145,6 +145,28 @@ The packaged evaluation set contains nine labeled questions. The latest Qdrant d
 One Atlas dashboard question places the correct document second, behind Beacon. This is an
 intentional, visible baseline limitation and the first target for the planned hybrid retriever.
 
+## Hybrid retrieval result
+
+Set `RAGBENCH_RETRIEVAL_MODE=hybrid` to combine BM25 lexical ranks with vector ranks using
+weighted reciprocal rank fusion. The lexical ranker is implemented directly in `store.py`, so the
+scoring logic remains inspectable and adds no search dependency.
+
+| Nine-case Qdrant run | Vector | Hybrid |
+| --- | ---: | ---: |
+| Hit Rate@3 | 1.0000 | 1.0000 |
+| Precision@3 | 0.3333 | 0.3333 |
+| Recall@3 | 1.0000 | 1.0000 |
+| Mean reciprocal rank | 0.9444 | **1.0000** |
+| Average retrieval latency | 0.80 ms | 1.29 ms |
+
+Hybrid retrieval moves the missed Atlas case from rank two to rank one. The measured cost is an
+additional `0.49 ms` of average retrieval latency in this local sample run.
+
+```bash
+RAGBENCH_RETRIEVAL_MODE=vector ragbench evaluate --name vector-baseline --k 3
+RAGBENCH_RETRIEVAL_MODE=hybrid ragbench evaluate --name hybrid-rerank --k 3
+```
+
 ## Persistent vector storage
 
 Qdrant local mode is enabled by default and writes to `.ragbench/qdrant`. Restarting the API does
@@ -179,7 +201,6 @@ tests/            Unit and API tests
 
 ## Roadmap
 
-- Add BM25 plus reciprocal-rank-fusion hybrid search.
 - Add a cross-encoder reranker and compare quality/latency tradeoffs.
 - Add MLflow export and richer experiment comparison charts.
 - Add a pgvector adapter and remote Qdrant configuration.

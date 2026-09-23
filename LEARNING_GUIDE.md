@@ -138,15 +138,15 @@ changes. This teaches how result-set size affects metrics.
 Change one sample question so it no longer shares useful terms with its document. Run the
 benchmark, observe the affected case, then improve the question or embedding method.
 
-### Exercise C: Add hybrid search
+### Exercise C: Inspect hybrid search
 
-Implement a lexical BM25 retriever and combine its ranking with the vector ranking using
-reciprocal rank fusion. Compare the new run with the persistent baseline before claiming an
-improvement.
+Run the vector and hybrid configurations at the same value of K. Follow `HybridVectorStore` as it
+calculates BM25 scores and combines lexical and vector ranks through reciprocal rank fusion.
+Confirm that the Atlas dashboard question moves from rank two to rank one, then explain why the
+latency increases.
 
 ## 10. The explanation to remember
 
-> The project separates retrieval, generation, and evaluation. I can swap one component, rerun
-> the same benchmark, and show whether the change improves ranking quality or only makes the
-> system more complicated.
-
+> The project separates retrieval, generation, and evaluation. I added hybrid BM25 plus vector
+> retrieval, reran the same nine labeled questions, and improved MRR from 0.9444 to 1.0000 for a
+> measured latency increase of 0.49 milliseconds.
