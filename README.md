@@ -11,7 +11,8 @@ and can switch to OpenAI embeddings and generation with configuration only.
 
 New to RAG? Start with the [learning guide](LEARNING_GUIDE.md). When you are ready to show the
 project, use the [five-minute demo script](DEMO_SCRIPT.md) and the
-[portfolio showcase kit](SHOWCASE.md).
+[portfolio showcase kit](SHOWCASE.md). The `docs/` directory also contains a standalone
+[project case study](docs/index.html) ready for GitHub Pages.
 
 ## Why this project exists
 
