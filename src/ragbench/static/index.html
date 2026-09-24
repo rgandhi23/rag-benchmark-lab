@@ -54,6 +54,10 @@
     .run small { color: var(--muted); display: block; }
     .score { color: var(--green); font-weight: 750; }
     .learn { margin-top: 18px; }
+    .ingest { margin-top: 18px; }
+    .ingest-grid { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+    .ingest-grid label { margin-top: 0; }
+    .ingest-result { color: var(--muted); margin: 12px 0 0; }
     .learn-head { display: flex; justify-content: space-between; gap: 20px; align-items: end; margin-bottom: 20px; }
     .learn-head p { margin: 0; color: var(--muted); max-width: 620px; }
     .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; counter-reset: step; }
@@ -71,6 +75,7 @@
       .grid { grid-template-columns: 1fr; }
       .flow { grid-template-columns: 1fr; }
       .definitions { grid-template-columns: 1fr 1fr; }
+      .ingest-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -112,6 +117,21 @@
         </div>
       </aside>
     </div>
+
+    <section class="panel ingest" aria-labelledby="ingest-title">
+      <div class="panel-head">
+        <div><div class="eyebrow">Build your knowledge base</div><h2 id="ingest-title">Upload a searchable PDF</h2></div>
+        <code>POST /v1/documents/pdf</code>
+      </div>
+      <form id="pdf-form" class="ingest-grid">
+        <div>
+          <label for="pdf-file">PDF document (maximum 10 MB)</label>
+          <input id="pdf-file" name="file" type="file" accept="application/pdf,.pdf" required>
+        </div>
+        <button id="upload-pdf" type="submit">Ingest PDF</button>
+      </form>
+      <p class="ingest-result" id="ingest-result">Text-bearing pages become searchable chunks with page-level citations. Image-only files require OCR.</p>
+    </section>
 
     <section class="panel learn" aria-labelledby="learn-title">
       <div class="learn-head">
@@ -193,12 +213,34 @@
         });
         byId('answer').innerHTML = `<p>${escapeHtml(result.answer)}</p><div class="meta"><span>${result.provider}</span><span>${result.latency_ms} ms</span></div>`;
         byId('citations').innerHTML = result.citations.map(citation => `
-          <div class="citation"><strong>[${citation.citation_id}] ${escapeHtml(citation.title)}</strong>
+          <div class="citation"><strong>[${citation.citation_id}] ${escapeHtml(citation.title)}${citation.page_number ? ` · page ${citation.page_number}` : ''}</strong>
           <span class="meta">score ${citation.score.toFixed(4)}</span><p>${escapeHtml(citation.excerpt)}</p></div>`).join('');
       } catch (error) {
         byId('answer').innerHTML = `<p class="error">${escapeHtml(error.message)}</p>`;
       } finally {
         button.disabled = false;
+      }
+    });
+
+    byId('pdf-form').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = byId('upload-pdf');
+      const file = byId('pdf-file').files[0];
+      if (!file) return;
+      button.disabled = true;
+      button.textContent = 'Ingesting';
+      byId('ingest-result').textContent = 'Extracting pages, creating chunks, and updating the index...';
+      const body = new FormData();
+      body.append('file', file);
+      try {
+        const result = await request('/v1/documents/pdf', {method: 'POST', body});
+        byId('ingest-result').textContent = `${result.filename}: ${result.pages_processed} pages processed, ${result.chunks_added} chunks added, ${result.total_chunks} total chunks.`;
+        await loadHealth();
+      } catch (error) {
+        byId('ingest-result').innerHTML = `<span class="error">${escapeHtml(error.message)}</span>`;
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Ingest PDF';
       }
     });
 

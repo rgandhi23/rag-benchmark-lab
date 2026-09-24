@@ -1,4 +1,4 @@
-.PHONY: install test lint run evaluate
+.PHONY: install test lint run evaluate docker-build docker-up docker-down release-check
 
 install:
 	python -m pip install '.[dev]'
@@ -14,3 +14,14 @@ run:
 
 evaluate:
 	ragbench evaluate
+
+docker-build:
+	docker build --tag rag-benchmark-lab:local .
+
+docker-up:
+	docker compose up --build --detach
+
+docker-down:
+	docker compose down
+
+release-check: lint test docker-build

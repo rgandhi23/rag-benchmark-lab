@@ -16,6 +16,7 @@ def test_health_and_query() -> None:
     assert "Retrieval quality you can inspect" in dashboard.text
     assert "How one question travels through the pipeline" in dashboard.text
     assert health.status_code == 200
+    assert health.json()["version"] == "0.2.0"
     assert health.json()["indexed_chunks"] == 3
     assert health.json()["retrieval_mode"] == "vector"
     assert evaluation_set.status_code == 200
@@ -44,3 +45,14 @@ def test_evaluation_is_persisted() -> None:
     assert evaluation.json()["mean_reciprocal_rank"] == 1.0
     assert runs.status_code == 200
     assert runs.json()[0]["name"] == "api-test"
+
+
+def test_pdf_endpoint_rejects_invalid_content() -> None:
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/documents/pdf",
+            files={"file": ("fake.pdf", b"not a pdf", "application/pdf")},
+        )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "The uploaded file is not a valid PDF"

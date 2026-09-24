@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     chunk_size: int = Field(default=120, ge=30, le=2_000)
     chunk_overlap: int = Field(default=20, ge=0, le=500)
     top_k: int = Field(default=3, ge=1, le=20)
+    max_upload_bytes: int = Field(default=10_485_760, ge=1024, le=104_857_600)
 
     @model_validator(mode="after")
     def validate_provider(self) -> "Settings":

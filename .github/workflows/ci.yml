@@ -16,4 +16,12 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - run: ruff check .
       - run: pytest --cov=ragbench --cov-report=term-missing
-
+      - name: Enforce retrieval quality baseline
+        run: >-
+          ragbench evaluate --name ci-quality-gate --k 3
+          --min-mrr 1.0 --min-recall 1.0 --min-hit-rate 1.0
+          --max-latency-ms 100
+        env:
+          RAGBENCH_STORE_BACKEND: memory
+          RAGBENCH_RETRIEVAL_MODE: hybrid
+          RAGBENCH_EXPERIMENT_DB_PATH: ":memory:"

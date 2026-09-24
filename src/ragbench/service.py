@@ -40,6 +40,7 @@ class RAGService:
                 source=result.chunk.source,
                 excerpt=result.chunk.text[:320],
                 score=round(result.score, 4),
+                page_number=result.chunk.page_number,
             )
             for index, result in enumerate(results, start=1)
         ]

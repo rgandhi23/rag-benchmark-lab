@@ -28,6 +28,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     evaluate.add_argument("--name", default="cli-baseline")
     evaluate.add_argument("--k", type=int, default=3)
+    evaluate.add_argument("--min-mrr", type=float, default=None)
+    evaluate.add_argument("--min-recall", type=float, default=None)
+    evaluate.add_argument("--min-hit-rate", type=float, default=None)
+    evaluate.add_argument("--max-latency-ms", type=float, default=None)
 
     commands.add_parser(
         "doctor", help="Show the active components without revealing credentials"
@@ -55,6 +59,23 @@ def doctor_report(settings: Settings) -> dict[str, object]:
         "chunk_overlap": settings.chunk_overlap,
         "top_k": settings.top_k,
     }
+
+
+def evaluation_gate_failures(result: object, args: argparse.Namespace) -> list[str]:
+    checks = (
+        ("MRR", result.mean_reciprocal_rank, args.min_mrr, "minimum"),
+        ("recall", result.recall_at_k, args.min_recall, "minimum"),
+        ("hit rate", result.hit_rate_at_k, args.min_hit_rate, "minimum"),
+        ("latency", result.average_latency_ms, args.max_latency_ms, "maximum"),
+    )
+    failures = []
+    for label, actual, threshold, direction in checks:
+        if threshold is None:
+            continue
+        failed = actual < threshold if direction == "minimum" else actual > threshold
+        if failed:
+            failures.append(f"{label} {actual} violates {direction} {threshold}")
+    return failures
 
 
 def main(argv: Sequence[str] | None = None) -> None:
@@ -97,6 +118,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         finally:
             repository.close()
         print(result.model_dump_json(indent=2))
+        failures = evaluation_gate_failures(result, args)
+        if failures:
+            parser.exit(1, "Evaluation gate failed: " + "; ".join(failures) + "\n")
     finally:
         service.store.close()
 

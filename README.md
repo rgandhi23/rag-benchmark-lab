@@ -1,8 +1,8 @@
 # RAG Benchmark Lab
 
 A transparent, reproducible platform for testing retrieval-augmented generation systems.
-It ingests documents, chunks and embeds them, persists vectors in Qdrant, retrieves evidence,
-generates cited answers, and records benchmark runs with multiple retrieval metrics.
+It ingests documents and PDFs, chunks and embeds them, persists vectors in Qdrant, retrieves
+evidence, generates page-aware cited answers, and records benchmark runs with multiple metrics.
 
 ![RAG Benchmark Lab dashboard](docs/assets/dashboard.png)
 
@@ -58,6 +58,28 @@ Open [http://localhost:8000](http://localhost:8000) for the benchmark dashboard 
 [http://localhost:8000/docs](http://localhost:8000/docs) for the interactive API. Three
 synthetic project documents are indexed automatically at startup.
 
+Upload a text-bearing PDF from the dashboard or API:
+
+```bash
+curl -s http://localhost:8000/v1/documents/pdf \
+  -F 'file=@example.pdf'
+```
+
+The default upload limit is 10 MB. Image-only PDFs are rejected with an actionable message
+instead of silently creating an empty index.
+
+## Docker deployment
+
+```bash
+cp .env.example .env.local
+docker compose up --build --detach
+curl --fail http://localhost:8000/health
+```
+
+The image runs as a non-root user, includes an HTTP health check, and stores Qdrant vectors plus
+SQLite experiment history in a named volume. See [DEPLOYMENT.md](DEPLOYMENT.md) for configuration,
+security controls, GHCR publishing, and production scaling notes.
+
 Try a query:
 
 ```bash
@@ -71,6 +93,17 @@ Run the baseline evaluation:
 ```bash
 make evaluate
 ```
+
+Turn the benchmark into a CI quality gate:
+
+```bash
+ragbench evaluate --name release-gate --k 3 \
+  --min-mrr 1.0 --min-recall 1.0 --min-hit-rate 1.0 \
+  --max-latency-ms 100
+```
+
+The command exits nonzero when any threshold is violated, so retrieval regressions can block a
+pull request instead of appearing later as a dashboard surprise.
 
 Inspect the active configuration without revealing a credential:
 
@@ -108,6 +141,7 @@ repository does not require code changes when you test another model.
 | `GET` | `/` | Query and benchmark dashboard |
 | `GET` | `/health` | Provider and index status |
 | `POST` | `/v1/documents` | Ingest one or more documents |
+| `POST` | `/v1/documents/pdf` | Extract and ingest a PDF with page citations |
 | `POST` | `/v1/query` | Retrieve evidence and generate a cited answer |
 | `POST` | `/v1/evaluate` | Calculate and persist retrieval metrics |
 | `GET` | `/v1/runs` | List recent benchmark runs |

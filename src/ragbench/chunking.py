@@ -27,9 +27,10 @@ class WordChunker:
             if not window:
                 break
             text = " ".join(window)
-            digest = hashlib.sha1(
-                f"{document.document_id}:{position}:{text}".encode(), usedforsecurity=False
-            ).hexdigest()[:12]
+            identity = f"{document.document_id}:{position}:{text}"
+            if document.page_number is not None:
+                identity = f"{document.document_id}:page-{document.page_number}:{position}:{text}"
+            digest = hashlib.sha1(identity.encode(), usedforsecurity=False).hexdigest()[:12]
             chunks.append(
                 Chunk(
                     chunk_id=f"{document.document_id}-{digest}",
@@ -38,9 +39,9 @@ class WordChunker:
                     text=text,
                     source=document.source,
                     position=position,
+                    page_number=document.page_number,
                 )
             )
             if start + self.chunk_size >= len(words):
                 break
         return chunks
-

@@ -6,6 +6,7 @@ class DocumentInput(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     text: str = Field(min_length=1)
     source: str | None = None
+    page_number: int | None = Field(default=None, ge=1)
 
 
 class Chunk(BaseModel):
@@ -15,6 +16,7 @@ class Chunk(BaseModel):
     text: str
     source: str | None = None
     position: int
+    page_number: int | None = None
 
 
 class SearchResult(BaseModel):
@@ -34,6 +36,7 @@ class Citation(BaseModel):
     source: str | None
     excerpt: str
     score: float
+    page_number: int | None = None
 
 
 class QueryResponse(BaseModel):
@@ -47,6 +50,11 @@ class IngestResponse(BaseModel):
     documents_added: int
     chunks_added: int
     total_chunks: int
+
+
+class FileIngestResponse(IngestResponse):
+    filename: str
+    pages_processed: int
 
 
 class EvaluationExample(BaseModel):

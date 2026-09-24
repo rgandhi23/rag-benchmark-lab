@@ -4,21 +4,24 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
 
+from ragbench import __version__
 from ragbench.chunking import WordChunker
 from ragbench.config import Settings, get_settings
 from ragbench.embeddings import HashingEmbedder, OpenAIEmbedder
 from ragbench.evaluation import evaluate_recall
 from ragbench.experiments import BenchmarkRunRepository
 from ragbench.generation import DemoGenerator, OpenAIGenerator
+from ragbench.ingestion import PDFIngestionError, extract_pdf_documents
 from ragbench.models import (
     BenchmarkRun,
     DocumentInput,
     EvaluationExample,
     EvaluationRequest,
     EvaluationResponse,
+    FileIngestResponse,
     IngestResponse,
     QueryRequest,
     QueryResponse,
@@ -81,7 +84,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="RAG Benchmark Lab",
-    version="0.1.0",
+    version=__version__,
     description="Measure retrieval quality and inspect every citation behind an answer.",
     lifespan=lifespan,
 )
@@ -99,6 +102,8 @@ def get_run_repository() -> BenchmarkRunRepository:
 
 
 RunRepositoryDependency = Annotated[BenchmarkRunRepository, Depends(get_run_repository)]
+PDFUpload = Annotated[UploadFile, File()]
+OptionalFormField = Annotated[str | None, Form()]
 
 
 @app.get("/", include_in_schema=False)
@@ -111,6 +116,7 @@ def dashboard() -> FileResponse:
 def health(service: ServiceDependency) -> dict[str, str | int]:
     return {
         "status": "ok",
+        "version": __version__,
         "provider": service.generator.provider_name,
         "indexed_chunks": service.store.size,
         "retrieval_mode": app.state.settings.retrieval_mode,
@@ -124,6 +130,44 @@ def ingest_documents(
     if not documents:
         raise HTTPException(status_code=400, detail="At least one document is required")
     return service.ingest(documents)
+
+
+@app.post("/v1/documents/pdf", response_model=FileIngestResponse)
+async def ingest_pdf(
+    service: ServiceDependency,
+    file: PDFUpload,
+    document_id: OptionalFormField = None,
+    title: OptionalFormField = None,
+) -> FileIngestResponse:
+    settings = app.state.settings
+    filename = file.filename or "upload.pdf"
+    allowed_content_types = {"application/pdf", "application/octet-stream"}
+    if file.content_type not in allowed_content_types and not filename.lower().endswith(".pdf"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Only PDF uploads are supported",
+        )
+    content = await file.read(settings.max_upload_bytes + 1)
+    if len(content) > settings.max_upload_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="PDF exceeds the configured upload limit",
+        )
+    try:
+        documents = extract_pdf_documents(
+            filename,
+            content,
+            document_id=document_id,
+            title=title,
+        )
+    except PDFIngestionError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    result = service.ingest(documents)
+    return FileIngestResponse(
+        **result.model_dump(),
+        filename=filename,
+        pages_processed=len(documents),
+    )
 
 
 @app.post("/v1/query", response_model=QueryResponse)
