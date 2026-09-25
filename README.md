@@ -148,6 +148,7 @@ repository does not require code changes when you test another model.
 | `POST` | `/v1/evaluate` | Calculate and persist retrieval metrics |
 | `GET` | `/v1/runs` | List recent benchmark runs |
 | `GET` | `/v1/system/storage` | Inspect persistence backend and record counts |
+| `GET` | `/metrics` | Prometheus-compatible request and latency counters |
 
 Create a portable backup while the API is stopped:
 
@@ -156,6 +157,9 @@ ragbench backup --output backups/ragbench-state.tar.gz
 ```
 
 The archive contains Qdrant state, a consistent SQLite snapshot, and a versioned manifest.
+
+Every response includes an `X-Request-ID`. Request completion logs are JSON and contain the
+request ID, method, path, status code, and latency without logging question or document content.
 
 Example evaluation payload:
 

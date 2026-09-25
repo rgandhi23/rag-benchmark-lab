@@ -16,7 +16,7 @@ def test_health_and_query() -> None:
     assert "Retrieval quality you can inspect" in dashboard.text
     assert "How one question travels through the pipeline" in dashboard.text
     assert health.status_code == 200
-    assert health.json()["version"] == "0.3.0"
+    assert health.json()["version"] == "0.3.1"
     assert health.json()["indexed_chunks"] == 3
     assert health.json()["retrieval_mode"] == "vector"
     assert health.json()["status"] == "ready"
@@ -33,7 +33,7 @@ def test_liveness_and_storage_diagnostics() -> None:
         storage = client.get("/v1/system/storage")
 
     assert live.status_code == 200
-    assert live.json() == {"status": "ok", "version": "0.3.0"}
+    assert live.json() == {"status": "ok", "version": "0.3.1"}
     assert storage.status_code == 200
     assert storage.json()["backend"] == "memory-vector"
     assert storage.json()["persistent"] is False
@@ -50,6 +50,17 @@ def test_readiness_returns_503_when_persistence_fails(monkeypatch) -> None:
 
     assert response.status_code == 503
     assert response.json()["detail"] == "A persistence dependency is unavailable"
+
+
+def test_request_id_and_prometheus_metrics() -> None:
+    with TestClient(app) as client:
+        health = client.get("/health/live", headers={"X-Request-ID": "test-request-123"})
+        metrics = client.get("/metrics")
+
+    assert health.headers["X-Request-ID"] == "test-request-123"
+    assert metrics.status_code == 200
+    assert "ragbench_http_requests_total" in metrics.text
+    assert 'method="GET",path="/health/live"' in metrics.text
 
 
 def test_evaluation_is_persisted() -> None:

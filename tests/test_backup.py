@@ -31,7 +31,7 @@ def test_backup_archives_vectors_database_and_manifest(tmp_path) -> None:
         manifest = json.load(manifest_file)
     assert "qdrant/storage.sqlite" in names
     assert "experiments.sqlite3" in names
-    assert manifest["app_version"] == "0.3.0"
+    assert manifest["app_version"] == "0.3.1"
     assert manifest["contains_vectors"] is True
 
 

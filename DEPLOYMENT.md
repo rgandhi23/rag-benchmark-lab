@@ -62,6 +62,13 @@ dependencies so an orchestrator only restarts a genuinely unresponsive process.
 HTTP 503 so traffic stops before a broken instance receives queries. `/v1/system/storage` reports
 the active backend, indexed chunks, and persisted benchmark-run count for operational dashboards.
 
+## Observability
+
+`/metrics` exposes Prometheus-compatible counters for requests, HTTP 5xx responses, and cumulative
+request latency grouped by method and path. The Kubernetes pod template includes scrape annotations.
+Every response also receives an `X-Request-ID`, and request logs are emitted as structured JSON
+without question text, document contents, or credentials.
+
 ## Backups
 
 Stop the API before copying embedded Qdrant state, then run:

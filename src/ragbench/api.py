@@ -7,7 +7,7 @@ from time import perf_counter
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 
 from ragbench import __version__
@@ -32,6 +32,7 @@ from ragbench.models import (
     QueryResponse,
     StorageStatus,
 )
+from ragbench.observability import configure_observability
 from ragbench.service import RAGService
 from ragbench.store import HybridVectorStore, InMemoryVectorStore, QdrantVectorStore
 
@@ -99,6 +100,7 @@ app.mount(
     StaticFiles(directory=Path(__file__).resolve().parent / "static"),
     name="static",
 )
+metrics_registry = configure_observability(app)
 
 
 def get_service() -> RAGService:
@@ -179,6 +181,14 @@ def storage_status(
         indexed_chunks=service.store.size,
         benchmark_runs=repository.count(),
         collection=settings.qdrant_collection,
+    )
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics() -> PlainTextResponse:
+    return PlainTextResponse(
+        metrics_registry.render(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
     )
 
 

@@ -22,6 +22,10 @@ spec:
     metadata:
       labels:
         app: rag-benchmark-lab
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "8000"
     spec:
       securityContext:
         runAsNonRoot: true
@@ -29,7 +33,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: api
-          image: ghcr.io/replace-me/rag-benchmark-lab:0.3.0
+          image: ghcr.io/replace-me/rag-benchmark-lab:0.3.1
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

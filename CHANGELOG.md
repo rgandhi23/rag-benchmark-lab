@@ -2,6 +2,14 @@
 
 All notable project changes are documented here.
 
+## 0.3.1 - 2026-09-25
+
+### Added
+
+- Prometheus-compatible HTTP metrics grouped by method and path.
+- Structured JSON request-completion logs without user content.
+- Correlation IDs returned through the `X-Request-ID` header.
+
 ## 0.3.0 - 2026-09-25
 
 ### Added
