@@ -1,11 +1,14 @@
 import json
+from collections.abc import Callable
 from contextlib import asynccontextmanager
 from importlib.resources import files
 from pathlib import Path
+from time import perf_counter
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from ragbench import __version__
 from ragbench.chunking import WordChunker
@@ -17,14 +20,17 @@ from ragbench.generation import DemoGenerator, OpenAIGenerator
 from ragbench.ingestion import PDFIngestionError, extract_pdf_documents
 from ragbench.models import (
     BenchmarkRun,
+    ComponentHealth,
     DocumentInput,
     EvaluationExample,
     EvaluationRequest,
     EvaluationResponse,
     FileIngestResponse,
+    HealthResponse,
     IngestResponse,
     QueryRequest,
     QueryResponse,
+    StorageStatus,
 )
 from ragbench.service import RAGService
 from ragbench.store import HybridVectorStore, InMemoryVectorStore, QdrantVectorStore
@@ -88,6 +94,11 @@ app = FastAPI(
     description="Measure retrieval quality and inspect every citation behind an answer.",
     lifespan=lifespan,
 )
+app.mount(
+    "/static",
+    StaticFiles(directory=Path(__file__).resolve().parent / "static"),
+    name="static",
+)
 
 
 def get_service() -> RAGService:
@@ -112,15 +123,63 @@ def dashboard() -> FileResponse:
     return FileResponse(dashboard_path)
 
 
-@app.get("/health")
-def health(service: ServiceDependency) -> dict[str, str | int]:
-    return {
-        "status": "ok",
-        "version": __version__,
-        "provider": service.generator.provider_name,
-        "indexed_chunks": service.store.size,
-        "retrieval_mode": app.state.settings.retrieval_mode,
+@app.get("/health/live")
+def liveness() -> dict[str, str]:
+    return {"status": "ok", "version": __version__}
+
+
+def _component_check(callback: Callable[[], None]) -> ComponentHealth:
+    started = perf_counter()
+    callback()
+    return ComponentHealth(status="ok", latency_ms=round((perf_counter() - started) * 1_000, 2))
+
+
+def readiness_status(
+    service: RAGService,
+    repository: BenchmarkRunRepository,
+) -> HealthResponse:
+    checks = {
+        "vector_store": _component_check(service.store.ping),
+        "experiment_store": _component_check(repository.ping),
     }
+    return HealthResponse(
+        status="ready",
+        version=__version__,
+        provider=service.generator.provider_name,
+        retrieval_mode=app.state.settings.retrieval_mode,
+        indexed_chunks=service.store.size,
+        checks=checks,
+    )
+
+
+@app.get("/health", response_model=HealthResponse)
+@app.get("/health/ready", response_model=HealthResponse)
+def readiness(
+    service: ServiceDependency,
+    repository: RunRepositoryDependency,
+) -> HealthResponse:
+    try:
+        return readiness_status(service, repository)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="A persistence dependency is unavailable",
+        ) from exc
+
+
+@app.get("/v1/system/storage", response_model=StorageStatus)
+def storage_status(
+    service: ServiceDependency,
+    repository: RunRepositoryDependency,
+) -> StorageStatus:
+    settings = app.state.settings
+    return StorageStatus(
+        backend=service.store.backend_name,
+        persistent=settings.store_backend == "qdrant",
+        indexed_chunks=service.store.size,
+        benchmark_runs=repository.count(),
+        collection=settings.qdrant_collection,
+    )
 
 
 @app.post("/v1/documents", response_model=IngestResponse)

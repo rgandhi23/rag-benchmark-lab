@@ -9,7 +9,7 @@ Demo mode is the safest default and requires no external credentials.
 cp .env.example .env.local
 docker compose up --build --detach
 docker compose ps
-curl --fail http://localhost:8000/health
+curl --fail http://localhost:8000/health/ready
 ```
 
 Open `http://localhost:8000`. Qdrant vectors and SQLite benchmark history are stored in the
@@ -50,6 +50,41 @@ The Compose configuration:
 - provides a size-limited temporary filesystem;
 - writes application state only to `/data`;
 - performs an HTTP health check every 30 seconds.
+- enforces CPU, memory, and process-count limits through Compose defaults;
+- allows 20 seconds for graceful shutdown before forced termination.
+
+## Health endpoints
+
+`/health/live` confirms that the web process can respond. It intentionally avoids persistence
+dependencies so an orchestrator only restarts a genuinely unresponsive process.
+
+`/health/ready` checks both the vector store and SQLite experiment repository. A failure returns
+HTTP 503 so traffic stops before a broken instance receives queries. `/v1/system/storage` reports
+the active backend, indexed chunks, and persisted benchmark-run count for operational dashboards.
+
+## Backups
+
+Stop the API before copying embedded Qdrant state, then run:
+
+```bash
+ragbench backup --output backups/ragbench-state.tar.gz
+```
+
+The command uses SQLite's backup API, packages the Qdrant directory, and writes a manifest with
+the application version and collection name. Store archives outside the container volume.
+
+## Kubernetes
+
+[`deploy/kubernetes.yaml`](deploy/kubernetes.yaml) includes a single-replica Deployment, Service,
+PVC, resource limits, non-root security context, read-only root filesystem, and separate liveness
+and readiness probes. Replace `replace-me` in the image name before applying it:
+
+```bash
+kubectl apply -f deploy/kubernetes.yaml
+```
+
+Embedded Qdrant uses a `ReadWriteOnce` volume and must remain single-replica. Move to a remote
+Qdrant service before scaling the API horizontally.
 
 ## GitHub Container Registry
 

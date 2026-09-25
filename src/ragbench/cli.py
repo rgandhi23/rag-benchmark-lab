@@ -1,8 +1,10 @@
 import argparse
 import json
 from collections.abc import Sequence
+from pathlib import Path
 
 from ragbench.api import build_service, load_sample_documents, load_sample_evaluation_set
+from ragbench.backup import BackupError, create_backup
 from ragbench.config import Settings, get_settings
 from ragbench.evaluation import evaluate_recall
 from ragbench.experiments import BenchmarkRunRepository
@@ -36,6 +38,9 @@ def build_parser() -> argparse.ArgumentParser:
     commands.add_parser(
         "doctor", help="Show the active components without revealing credentials"
     )
+
+    backup = commands.add_parser("backup", help="Archive persistent vectors and benchmark runs")
+    backup.add_argument("--output", type=Path, required=True)
 
     serve = commands.add_parser("serve", help="Start the API and visual dashboard")
     serve.add_argument("--host", default="127.0.0.1")
@@ -88,6 +93,13 @@ def main(argv: Sequence[str] | None = None) -> None:
     settings = get_settings()
     if args.command == "doctor":
         print(json.dumps(doctor_report(settings), indent=2))
+        return
+    if args.command == "backup":
+        try:
+            output = create_backup(settings, args.output)
+        except BackupError as exc:
+            parser.exit(1, f"Backup failed: {exc}\n")
+        print(json.dumps({"backup": str(output), "status": "created"}, indent=2))
         return
     if args.command == "serve":
         import uvicorn

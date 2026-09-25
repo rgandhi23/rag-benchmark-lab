@@ -140,11 +140,22 @@ repository does not require code changes when you test another model.
 | --- | --- | --- |
 | `GET` | `/` | Query and benchmark dashboard |
 | `GET` | `/health` | Provider and index status |
+| `GET` | `/health/live` | Lightweight process liveness probe |
+| `GET` | `/health/ready` | Qdrant and SQLite readiness checks |
 | `POST` | `/v1/documents` | Ingest one or more documents |
 | `POST` | `/v1/documents/pdf` | Extract and ingest a PDF with page citations |
 | `POST` | `/v1/query` | Retrieve evidence and generate a cited answer |
 | `POST` | `/v1/evaluate` | Calculate and persist retrieval metrics |
 | `GET` | `/v1/runs` | List recent benchmark runs |
+| `GET` | `/v1/system/storage` | Inspect persistence backend and record counts |
+
+Create a portable backup while the API is stopped:
+
+```bash
+ragbench backup --output backups/ragbench-state.tar.gz
+```
+
+The archive contains Qdrant state, a consistent SQLite snapshot, and a versioned manifest.
 
 Example evaluation payload:
 
@@ -217,6 +228,10 @@ RAGBENCH_STORE_BACKEND=memory
 
 For larger or concurrent workloads, the same adapter can point to a Qdrant server in a future
 milestone. Local mode intentionally favors a simple one-process developer experience.
+
+For a Kubernetes example with non-root execution, resource limits, readiness and liveness probes,
+and a persistent volume claim, see [`deploy/kubernetes.yaml`](deploy/kubernetes.yaml). Replace the
+placeholder GHCR image owner before applying it.
 
 ## Repository map
 

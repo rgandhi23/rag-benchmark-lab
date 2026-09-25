@@ -26,6 +26,8 @@ class VectorStore(Protocol):
 
     def all_chunks(self) -> list[Chunk]: ...
 
+    def ping(self) -> None: ...
+
     def clear(self) -> None: ...
 
     def close(self) -> None: ...
@@ -76,6 +78,9 @@ class InMemoryVectorStore:
 
     def all_chunks(self) -> list[Chunk]:
         return [item.chunk for item in self._items]
+
+    def ping(self) -> None:
+        return None
 
     def clear(self) -> None:
         self._items.clear()
@@ -167,6 +172,9 @@ class QdrantVectorStore:
             if offset is None:
                 break
         return chunks
+
+    def ping(self) -> None:
+        self.client.get_collections()
 
     def clear(self) -> None:
         if self.client.collection_exists(self.collection_name):
@@ -271,6 +279,9 @@ class HybridVectorStore:
 
     def all_chunks(self) -> list[Chunk]:
         return list(self._chunks.values())
+
+    def ping(self) -> None:
+        self.vector_store.ping()
 
     def clear(self) -> None:
         self.vector_store.clear()

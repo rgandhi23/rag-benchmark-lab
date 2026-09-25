@@ -6,6 +6,8 @@
 - [ ] `make test` passes with coverage reported.
 - [ ] `make docker-build` succeeds from a clean checkout.
 - [ ] `/health`, `/v1/query`, `/v1/evaluate`, and PDF rejection paths are verified.
+- [ ] `/health/live` stays lightweight and `/health/ready` returns 503 on dependency failure.
+- [ ] A backup archive opens and its manifest matches the release version.
 - [ ] Vector and hybrid benchmark results are recorded with the same evaluation set.
 
 ## Security

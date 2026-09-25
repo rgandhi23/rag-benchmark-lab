@@ -2,6 +2,22 @@
 
 All notable project changes are documented here.
 
+## 0.3.0 - 2026-09-25
+
+### Added
+
+- Separate liveness and dependency-aware readiness endpoints.
+- Storage diagnostics for vectors and benchmark history.
+- JavaScript health polling and operational dashboard indicators.
+- Portable Qdrant and SQLite backup archives with versioned manifests.
+- Kubernetes Deployment, Service, and persistent volume example.
+- Wheel-build verification that confirms JavaScript assets are packaged.
+
+### Changed
+
+- Compose now applies CPU, memory, process-count, and graceful-shutdown limits.
+- Container health checks use the readiness endpoint.
+
 ## 0.2.0 - 2026-09-24
 
 ### Added

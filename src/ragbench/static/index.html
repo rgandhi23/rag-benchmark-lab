@@ -29,6 +29,11 @@
     .subtitle { color: var(--muted); max-width: 650px; margin: 14px 0 0; }
     .status { display: flex; align-items: center; gap: 8px; color: var(--muted); white-space: nowrap; }
     .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 18px var(--green); }
+    .dot.is-error { background: var(--danger); box-shadow: 0 0 18px var(--danger); }
+    .system-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-bottom: 18px; overflow: hidden; }
+    .system-item { background: var(--surface); padding: 14px 16px; }
+    .system-item span { color: var(--muted); display: block; font-size: .76rem; }
+    .system-item strong { display: block; margin-top: 3px; font-size: .95rem; }
     .grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, .8fr); gap: 18px; }
     .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 22px; }
     .panel-head { display: flex; justify-content: space-between; gap: 14px; align-items: center; margin-bottom: 18px; }
@@ -76,6 +81,7 @@
       .flow { grid-template-columns: 1fr; }
       .definitions { grid-template-columns: 1fr 1fr; }
       .ingest-grid { grid-template-columns: 1fr; }
+      .system-strip { grid-template-columns: 1fr 1fr; }
     }
   </style>
 </head>
@@ -89,6 +95,13 @@
       </div>
       <div class="status"><span class="dot"></span><span id="status">Connecting</span></div>
     </header>
+
+    <section class="system-strip" aria-label="Live system diagnostics">
+      <div class="system-item"><span>Readiness</span><strong id="readiness">Checking</strong></div>
+      <div class="system-item"><span>Vector store</span><strong id="storage-backend">Checking</strong></div>
+      <div class="system-item"><span>Experiment history</span><strong id="benchmark-runs">Checking</strong></div>
+      <div class="system-item"><span>Dependency latency</span><strong id="dependency-latency">Checking</strong></div>
+    </section>
 
     <div class="grid">
       <section class="panel">
@@ -157,6 +170,7 @@
     </section>
   </main>
 
+  <script src="/static/health.js" defer></script>
   <script>
     const byId = id => document.getElementById(id);
     const escapeHtml = value => value.replace(/[&<>'"]/g, character => ({

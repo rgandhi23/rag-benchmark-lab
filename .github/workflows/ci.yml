@@ -25,3 +25,22 @@ jobs:
           RAGBENCH_STORE_BACKEND: memory
           RAGBENCH_RETRIEVAL_MODE: hybrid
           RAGBENCH_EXPERIMENT_DB_PATH: ":memory:"
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: python -m pip install build
+      - run: python -m build
+      - run: python -m venv /tmp/ragbench-wheel-test
+      - run: /tmp/ragbench-wheel-test/bin/pip install dist/*.whl
+      - run: /tmp/ragbench-wheel-test/bin/ragbench doctor
+      - name: Verify packaged dashboard assets
+        run: >-
+          /tmp/ragbench-wheel-test/bin/python -c
+          "from importlib.resources import files;
+          assert files('ragbench').joinpath('static/health.js').is_file()"

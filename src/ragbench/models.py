@@ -102,3 +102,25 @@ class BenchmarkRun(BaseModel):
     recall_at_k: float
     mean_reciprocal_rank: float
     average_latency_ms: float
+
+
+class ComponentHealth(BaseModel):
+    status: str
+    latency_ms: float
+
+
+class HealthResponse(BaseModel):
+    status: str
+    version: str
+    provider: str
+    retrieval_mode: str
+    indexed_chunks: int
+    checks: dict[str, ComponentHealth]
+
+
+class StorageStatus(BaseModel):
+    backend: str
+    persistent: bool
+    indexed_chunks: int
+    benchmark_runs: int
+    collection: str

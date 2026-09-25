@@ -16,13 +16,40 @@ def test_health_and_query() -> None:
     assert "Retrieval quality you can inspect" in dashboard.text
     assert "How one question travels through the pipeline" in dashboard.text
     assert health.status_code == 200
-    assert health.json()["version"] == "0.2.0"
+    assert health.json()["version"] == "0.3.0"
     assert health.json()["indexed_chunks"] == 3
     assert health.json()["retrieval_mode"] == "vector"
+    assert health.json()["status"] == "ready"
+    assert set(health.json()["checks"]) == {"vector_store", "experiment_store"}
     assert evaluation_set.status_code == 200
     assert len(evaluation_set.json()) == 9
     assert response.status_code == 200
     assert response.json()["citations"][0]["document_id"] == "harbor"
+
+
+def test_liveness_and_storage_diagnostics() -> None:
+    with TestClient(app) as client:
+        live = client.get("/health/live")
+        storage = client.get("/v1/system/storage")
+
+    assert live.status_code == 200
+    assert live.json() == {"status": "ok", "version": "0.3.0"}
+    assert storage.status_code == 200
+    assert storage.json()["backend"] == "memory-vector"
+    assert storage.json()["persistent"] is False
+    assert storage.json()["indexed_chunks"] == 3
+
+
+def test_readiness_returns_503_when_persistence_fails(monkeypatch) -> None:
+    def fail_ping() -> None:
+        raise RuntimeError("storage unavailable")
+
+    with TestClient(app) as client:
+        monkeypatch.setattr(app.state.rag_service.store, "ping", fail_ping)
+        response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["detail"] == "A persistence dependency is unavailable"
 
 
 def test_evaluation_is_persisted() -> None:

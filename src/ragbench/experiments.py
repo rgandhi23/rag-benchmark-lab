@@ -78,5 +78,14 @@ class BenchmarkRunRepository:
             ).fetchall()
         return [BenchmarkRun.model_validate(dict(row)) for row in rows]
 
+    def ping(self) -> None:
+        with self.lock:
+            self.connection.execute("SELECT 1").fetchone()
+
+    def count(self) -> int:
+        with self.lock:
+            row = self.connection.execute("SELECT COUNT(*) FROM benchmark_runs").fetchone()
+        return int(row[0])
+
     def close(self) -> None:
         self.connection.close()
