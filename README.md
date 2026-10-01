@@ -1,5 +1,9 @@
 # RAG Benchmark Lab
 
+[![CI](https://github.com/rgandhi23/rag-benchmark-lab/actions/workflows/ci.yml/badge.svg)](https://github.com/rgandhi23/rag-benchmark-lab/actions/workflows/ci.yml)
+[![Container](https://github.com/rgandhi23/rag-benchmark-lab/actions/workflows/container.yml/badge.svg)](https://github.com/rgandhi23/rag-benchmark-lab/actions/workflows/container.yml)
+[![Live case study](https://img.shields.io/badge/live-case%20study-2563eb)](https://rgandhi23.github.io/rag-benchmark-lab/)
+
 A transparent, reproducible platform for testing retrieval-augmented generation systems.
 It ingests documents and PDFs, chunks and embeds them, persists vectors in Qdrant, retrieves
 evidence, generates page-aware cited answers, and records benchmark runs with multiple metrics.
